@@ -7,6 +7,8 @@ output: html_document
 
 try this
 
+what's going on?
+
 ```{r}
 # For general stuff:
 library(tidyverse)
@@ -32,9 +34,10 @@ library(mapview)
 
 ```{r}
 
-us_renew <- read_csv(here("data", "renewables_cons_prod.csv"))
+us_renew <- read_csv(here("data", "renewables_cons_prod.csv")) %>% 
+  clean_names()
 
-
+unique(us_renew$description)
 
 
 
