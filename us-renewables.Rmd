@@ -6,6 +6,37 @@ output: html_document
 ---
 
 try this
+
+```{r}
+# For general stuff:
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(here)
+library(paletteer)
+
+# For ts stuff: 
+library(tsibble)
+library(fable)
+library(fabletools)
+library(feasts)
+library(forecast)
+
+# For spatial stuff: 
+library(sf)
+library(tmap)
+library(mapview)
+```
+
+# Monthly US energy consumption (renewables)
+
 ```{r}
 
+us_renew <- read_csv(here("data", "renewables_cons_prod.csv"))
+
+
+
+
+
 ```
+
