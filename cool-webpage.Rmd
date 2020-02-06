@@ -1,0 +1,8 @@
+---
+title: "awesome stuff"
+author: "Juan Silva"
+date: "2/6/2020"
+output: html_document
+---
+
+make sure to read this!!
