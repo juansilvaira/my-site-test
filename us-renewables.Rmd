@@ -43,3 +43,21 @@ unique(us_renew$description)
 
 ```
 
+We'll focus on consumption data. 
+
+### Clean up data
+
+- Convert description to all lowercase
+- Only keep observations for "consumption" in "description" variable
+- Remove any "total" observations from "description" variable
+
+
+```{r}
+
+renew_clean <- us_renew %>% 
+  mutate(description = str_to_lower(description)) %>% 
+  filter(str_detect(description, pattern = "consumption")) %>% 
+  filter(!str_detect(description, pattern = "total"))
+
+```
+

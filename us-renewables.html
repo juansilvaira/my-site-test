@@ -185,6 +185,108 @@ summary {
 
 
 <p>try this</p>
+<p>what’s going on?</p>
+<pre class="r"><code># For general stuff:
+library(tidyverse)</code></pre>
+<pre><code>## Warning: package 'tidyverse' was built under R version 3.5.2</code></pre>
+<pre><code>## ── Attaching packages ───────────────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.2.1     ✓ purrr   0.3.3
+## ✓ tibble  2.1.3     ✓ dplyr   0.8.3
+## ✓ tidyr   1.0.0     ✓ stringr 1.4.0
+## ✓ readr   1.3.1     ✓ forcats 0.4.0</code></pre>
+<pre><code>## Warning: package 'ggplot2' was built under R version 3.5.2</code></pre>
+<pre><code>## Warning: package 'tibble' was built under R version 3.5.2</code></pre>
+<pre><code>## Warning: package 'tidyr' was built under R version 3.5.2</code></pre>
+<pre><code>## Warning: package 'purrr' was built under R version 3.5.2</code></pre>
+<pre><code>## Warning: package 'dplyr' was built under R version 3.5.2</code></pre>
+<pre><code>## Warning: package 'stringr' was built under R version 3.5.2</code></pre>
+<pre><code>## Warning: package 'forcats' was built under R version 3.5.2</code></pre>
+<pre><code>## ── Conflicts ──────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(janitor)
+library(lubridate)</code></pre>
+<pre><code>## 
+## Attaching package: 'lubridate'</code></pre>
+<pre><code>## The following object is masked from 'package:base':
+## 
+##     date</code></pre>
+<pre class="r"><code>library(here)</code></pre>
+<pre><code>## here() starts at /Users/juansilva/Google Drive/WINTER 2020 BREN/ESM244 ADV DATA/my-site-test</code></pre>
+<pre><code>## 
+## Attaching package: 'here'</code></pre>
+<pre><code>## The following object is masked from 'package:lubridate':
+## 
+##     here</code></pre>
+<pre class="r"><code>library(paletteer)
+
+# For ts stuff: 
+library(tsibble)</code></pre>
+<pre><code>## Warning: package 'tsibble' was built under R version 3.5.2</code></pre>
+<pre><code>## 
+## Attaching package: 'tsibble'</code></pre>
+<pre><code>## The following objects are masked from 'package:lubridate':
+## 
+##     interval, new_interval</code></pre>
+<pre><code>## The following object is masked from 'package:dplyr':
+## 
+##     id</code></pre>
+<pre class="r"><code>library(fable)</code></pre>
+<pre><code>## Warning: package 'fable' was built under R version 3.5.2</code></pre>
+<pre><code>## Loading required package: fabletools</code></pre>
+<pre><code>## Warning: package 'fabletools' was built under R version 3.5.2</code></pre>
+<pre class="r"><code>library(fabletools)
+library(feasts)</code></pre>
+<pre><code>## Warning: package 'feasts' was built under R version 3.5.2</code></pre>
+<pre class="r"><code>library(forecast)</code></pre>
+<pre><code>## Warning: package 'forecast' was built under R version 3.5.2</code></pre>
+<pre><code>## 
+## Attaching package: 'forecast'</code></pre>
+<pre><code>## The following objects are masked from 'package:fabletools':
+## 
+##     GeomForecast, StatForecast</code></pre>
+<pre class="r"><code># For spatial stuff: 
+library(sf)</code></pre>
+<pre><code>## Warning: package 'sf' was built under R version 3.5.2</code></pre>
+<pre><code>## Linking to GEOS 3.7.2, GDAL 2.4.2, PROJ 5.2.0</code></pre>
+<pre class="r"><code>library(tmap)</code></pre>
+<pre><code>## Warning: package 'tmap' was built under R version 3.5.2</code></pre>
+<pre class="r"><code>library(mapview)</code></pre>
+<div id="monthly-us-energy-consumption-renewables" class="section level1">
+<h1>Monthly US energy consumption (renewables)</h1>
+<pre class="r"><code>us_renew &lt;- read_csv(here(&quot;data&quot;, &quot;renewables_cons_prod.csv&quot;)) %&gt;% 
+  clean_names()</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   MSN = col_character(),
+##   YYYYMM = col_double(),
+##   Value = col_character(),
+##   Column_Order = col_double(),
+##   Description = col_character(),
+##   Unit = col_character()
+## )</code></pre>
+<pre class="r"><code>unique(us_renew$description)</code></pre>
+<pre><code>##  [1] &quot;Wood Energy Production&quot;             &quot;Biofuels Production&quot;               
+##  [3] &quot;Total Biomass Energy Production&quot;    &quot;Total Renewable Energy Production&quot; 
+##  [5] &quot;Hydroelectric Power Consumption&quot;    &quot;Geothermal Energy Consumption&quot;     
+##  [7] &quot;Solar Energy Consumption&quot;           &quot;Wind Energy Consumption&quot;           
+##  [9] &quot;Wood Energy Consumption&quot;            &quot;Waste Energy Consumption&quot;          
+## [11] &quot;Biofuels Consumption&quot;               &quot;Total Biomass Energy Consumption&quot;  
+## [13] &quot;Total Renewable Energy Consumption&quot;</code></pre>
+<p>We’ll focus on consumption data.</p>
+<div id="clean-up-data" class="section level3">
+<h3>Clean up data</h3>
+<ul>
+<li>Convert description to all lowercase</li>
+<li>Only keep observations for “consumption” in “description” variable</li>
+<li>Remove any “total” observations from “description” variable</li>
+</ul>
+<pre class="r"><code>renew_clean &lt;- us_renew %&gt;% 
+  mutate(description = str_to_lower(description)) %&gt;% 
+  filter(str_detect(description, pattern = &quot;consumption&quot;)) %&gt;% 
+  filter(!str_detect(description, pattern = &quot;total&quot;))</code></pre>
+</div>
+</div>
 
 
 
