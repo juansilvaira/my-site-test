@@ -61,3 +61,174 @@ renew_clean <- us_renew %>%
 
 ```
 
+###Convert 'yyyymm' column to a date
+
+```{r}
+
+renew_date <- renew_clean %>% 
+  mutate(yr_mo_day = lubridate::parse_date_time(yyyymm, "ym")) %>% 
+  mutate(month_sep = yearmonth(yr_mo_day)) %>% #coerce to tsibble `yearmonth` format
+  mutate(value = as.numeric(value)) %>% 
+  drop_na(month_sep, value)
+
+# Want to parse the year and month? We may use this later...
+renew_parsed <-renew_date %>% 
+  mutate(month = month(yr_mo_day, label = TRUE)) %>% 
+  mutate(year = year(yr_mo_day))
+
+```
+
+
+### Look at it:
+
+```{r}
+
+renew_gg <- ggplot(data = renew_date, aes(x = month_sep, 
+                                          y = value,
+                                          group = description)) +
+  geom_line(aes(color = description))
+
+renew_gg
+
+```
+
+### updating my colors with paleteer
+
+```{r}
+renew_gg +
+  scale_color_paletteer_d("ghibli::LaputaMedium")
+
+```
+
+### Coerce renew_parsed to a tsibble
+
+```{r}
+renew_ts <- as_tsibble(renew_parsed, key = description, index = month_sep)
+```
+
+#Lets look at time series data in a couple diferent ways
+
+```{r}
+renew_ts %>% autoplot(value)
+renew_ts %>% gg_subseries(value)
+# renew_ts %>% gg_season(value)
+
+ggplot(data = renew_parsed, aes(x = month, y = value, group = year)) + 
+  geom_line(aes(color = year)) +
+  facet_wrap(~description,
+             ncol = 1,
+             scales = "free",
+             strip.position = "right")
+
+```
+
+# let's look at hydroelectric consumption
+
+```{r}
+
+hydro_ts <- renew_ts %>% 
+  filter(description == "hydroelectric power consumption")
+
+# Explore: 
+hydro_ts %>% autoplot(value)
+hydro_ts %>% gg_subseries(value)
+# hydro_ts %>% gg_season(value)
+
+# OK, what if gg_season() doesn't work?
+# It's just a function that uses ggplot() to do things we already know how to do in ggplot()!
+
+ggplot(hydro_ts, aes(x = month, y = value, group = year)) +
+  geom_line(aes(color = year))
+
+```
+
+### Calculate summary data by time using `index_by()`
+
+What if we want to calculate consumption by quarter? We'll use `index_by()` to tell R which "windows" to calculate a value with in. 
+
+Quarterly:
+```{r}
+hydro_quarterly <- hydro_ts %>% 
+  index_by(year_qu = ~ yearquarter(.)) %>% # monthly aggregates
+  summarise(
+    avg_consumption = mean(value)
+  )
+
+head(hydro_quarterly)
+```
+
+
+### Decompose the hydro consumption ts data
+
+First, let's check the decomposition (STL):
+```{r}
+# Find STL decomposition
+dcmp <- hydro_ts %>%
+  model(STL(value ~ season(window = 5)))
+
+# View the components
+# components(dcmp)
+
+# Visualize the decomposed components
+components(dcmp) %>% autoplot() +
+  theme_minimal()
+
+# Let's check out the residuals:
+hist(components(dcmp)$remainder)
+
+```
+
+### Explore the ACF
+
+```{r}
+
+hydro_ts %>% 
+  ACF(value) %>% 
+  autoplot()
+
+```
+
+# DANGER DANGWR DO A LOT OF READING 
+MODEL FOR FORECASTING
+
+```{r}
+hydro_model <- hydro_ts %>%
+  model(
+    arima = ARIMA(value),
+    ets = ETS(value)
+  ) %>%
+  fabletools::forecast(h = "2 years")
+
+hydro_model %>% 
+  autoplot(filter(hydro_ts, 
+                  year(month_sep) > 2010), 
+           level = NULL)
+
+
+```
+
+#lets make a world map
+
+```{r}
+
+# Get spatial data: 
+world <- read_sf(dsn = here("data","TM_WORLD_BORDERS_SIMPL-0.3-1"), layer = "TM_WORLD_BORDERS_SIMPL-0.3") %>% clean_names()
+
+# Quick & easy option to see those polygons (also for points, lines!)
+mapview(world)
+
+# ggplot (static)
+world_base <- ggplot(data = world) +
+  geom_sf(aes(fill = pop2005),
+          color = NA) + 
+  scale_fill_paletteer_c("viridis::viridis") +
+  theme_minimal()
+
+world_base
+
+# Let's crop it: 
+world_base +
+  coord_sf(xlim = c(-20, 50), ylim = c(-40, 40), expand = FALSE)
+
+```
+
